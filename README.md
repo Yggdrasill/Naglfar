@@ -11,6 +11,7 @@ License
 
 Copyright (c) Yggdrasill/Wolfie
 wolfie _ xlr@lavabit.com
+
 [#hacking] @ irc.datnode.net
 
 Naglfar is released under the terms of the [GNU GPLv3] [gpl3]
