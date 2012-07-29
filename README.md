@@ -11,8 +11,8 @@ License
 
 Copyright (c) Yggdrasill/Wolfie
 wolfie _ xlr@lavabit.com
-
-[#hacking] @ irc.datnode.net
+[#hacking @ DatNode] [irc]
+  [irc]: irc://irc.datnode.net/hacking
 
 Naglfar is released under the terms of the [GNU GPLv3] [gpl3]
   [gpl3]: https://www.gnu.org/licenses/gpl.html
@@ -31,15 +31,19 @@ pointer to the plugin and unloading the plugin. These functions are:
   container that holds the amount of plugins loaded, the max amount of plugins and an array of datastructures that
   contain the plugins themselves, and various information related to it. On failure it throws an error and returns NULL,
   and returns the main plugin container on success. */
+
   plugInstall() /* This function takes two arguments, which are the main plugin container and the name of a plugin. It
   hashes the name of the plugin and makes it fit into the main plugin container, then fills the data within
   sPlugCont->sPlugin[hash] (the plugin information structure). On failure it throws an error and returns a non-zero
   integer, on success it returns 0. */
+
   plugGetPtr() /* This function takes two arguments, which are the main plugin container and the name of a plugin. It
   hashes the name of the plugin, and returns the function pointer stored in sPlugCont->sPlugin[hash]. On failure it
-  throws an error and returns NULL, and returns a function pointer on success.. */
+  throws an error and returns NULL, and returns a function pointer on success. */
+
   plugFree() /* This function takes two arguments, which are the main plugin container and the name of a plugin. It
   hashes the name of the plugin, and throws an error on failure. It does not return anything. */
+
   pluContDestruct() /* This function takes the main plugin container as its argument, and frees the main plugin
   container. If the main plugin container is not malloced, it will throw an error. It does not return anything. Note
   that you have to plugFree() your plugins, as this is not done by this function. */
