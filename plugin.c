@@ -34,6 +34,9 @@ char *plugGetError(int plugErrorCode, char *plugErrorDetails)
     case PLUGERR_CMEM:
       strncpy(plugErrMsg, "Failed to allocate memory for the main plugin container. Not enough memory available\n", 1024);
       break;
+    case PLUGERR_CNA:
+      strncpy(plugErrMsg, "You're trying to free the main plugin container, but it's not even malloced. Aborting\n", 1024);
+      break;
     default:
       strncpy(plugErrMsg, "I have no idea WHAT the fuck is going on\n", 1024);
   }
@@ -77,10 +80,14 @@ void plugDestroy(plugInfo *sPlugin)
 
 void plugContDestruct(plugCont *sPlugCont)
 {
-  while(sPlugCont->plugMax--)
-    plugDestroy(sPlugCont->sPlugin[sPlugCont->plugMax]);
-  free(sPlugCont->sPlugin);
-  free(sPlugCont);
+  if(sPlugCont) {
+    while(sPlugCont->plugMax--)
+      plugDestroy(sPlugCont->sPlugin[sPlugCont->plugMax]);
+    free(sPlugCont->sPlugin);
+    free(sPlugCont);
+  }
+  else
+    fputs(plugGetError(PLUGERR_CNA, NULL), stderr);
 }
 
 uint32_t genHash(char *plugName, uint32_t plugMax)

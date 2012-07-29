@@ -1,3 +1,5 @@
+
+
 #define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <string.h>
@@ -30,7 +32,8 @@ enum plugErrCodes {
   PLUGERR_LOADED,
   PLUGERR_HASHCOL,
   PLUGERR_SMEM,
-  PLUGERR_CMEM
+  PLUGERR_CMEM,
+  PLUGERR_CNA
 } plugErrCode;
 
 char *plugGetError(int, char *);
