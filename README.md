@@ -4,7 +4,7 @@ Naglfar Plugin Framework
 About
 -------
 
-Naglfar is an abstract framework for plugins, based upon libdl. It's intended to abstract away the memory management of plugin loading into easily usable functions, while giving you descriptive error messages when something goes wrong. It is written to be extensible and usable in any scenario, with as few limitations as possible.
+Naglfar is an abstract framework for plugins, based upon libdl. It's intended to abstract away the memory management of plugin loading into easily usable functions, while giving you descriptive error messages when something goes wrong. It is written to be extensible and usable in any scenario, with as few limitations as possible. All plugins should be compiled with -fPIC -shared in either gcc or clang, I do not know the compilation options for other compilers.
 
 License
 -------
@@ -25,8 +25,7 @@ any version of this software, nor can you add any restrictions beyond those outl
 
 Usage
 -----
-
-As previously stated in this README, Naglfar is intended to abstract away many frustrations with plugin loading in C. This is done by giving you only five functions that are necessary to call should to load, get a callable function pointer to the plugin and unloading the plugin. These functions are:
+As previously stated in this README, Naglfar is intended to abstract away many frustrations with plugin loading in C. This is done by giving you only five functions that are necessary to call in order to load a plugin, get a callable function pointer to the plugin and unloading the plugin. These functions are:
 
 ### plugContConstruct()
 
@@ -46,10 +45,6 @@ This function takes two arguments, which are the main plugin container and the n
 ### plugContDestruct()
 
 This function takes the main plugin container as its argument, and frees the main plugin container. If the main plugin container is not malloced, it will throw an error. It does not return anything. Note that you have to plugFree() your plugins, as this is not done by this function.
-
-### Compiling plugins
-
-All plugins should be compiled with -fPIC -shared in GCC or clang.
 
 Last Words
 ---------
