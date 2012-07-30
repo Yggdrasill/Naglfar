@@ -34,7 +34,7 @@ This function takes an unsigned long as its input (maximum amount of plugins). I
 
 ### plugInstall()
 
-This function takes two arguments, which are the main plugin container and the name of a plugin. It hashes the name of the plugin and makes it fit into the main plugin container, then fills the data within sPlugCont.sPlugin + hash (the plugin information structure). On failure it throws an error and returns a non-zero integer, on success it returns 0.
+This function takes four arguments, which are the main plugin container, the name of a plugin, the path to the plugin and the symbol to look for in the compiled plugin. It hashes the name of the plugin and makes it fit into the main plugin container, then fills the data within sPlugCont.sPlugin + hash (the plugin information structure). On failure it throws an error and returns a non-zero integer, on success it returns 0.
 
 ### plugGetPtr()
 
