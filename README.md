@@ -11,7 +11,7 @@ License
 
 Copyright (C) Yggdrasill/Wolfie
 
-yggdrasill at lavabit dot com
+[yggdrasil@lavabit.com] [email]
 
 [#hacking @ DatNode] [irc]
 
@@ -53,3 +53,4 @@ I wrote this plugin framework for my own enjoyment, and to make it easier for me
 
 [gpl3]: https://www.gnu.org/licenses/gpl.html
 [irc]: irc://irc.datnode.net/hacking
+[email]: mailto:yggdrasill@lavabit.com
