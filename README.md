@@ -9,7 +9,7 @@ Naglfar is an abstract framework for plugins, based upon libdl. It's intended to
 License
 -------
 
-Copyright (c) Yggdrasill/Wolfie
+Copyright (C) Yggdrasill/Wolfie
 
 yggdrasill at lavabit dot com
 
