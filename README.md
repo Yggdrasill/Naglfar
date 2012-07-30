@@ -47,6 +47,10 @@ This function takes two arguments, which are the main plugin container and the n
 
 This function takes the main plugin container as its argument, and frees the main plugin container. If the main plugin container is not malloced, it will throw an error. It does not return anything. Note that you have to plugFree() your plugins, as this is not done by this function.
 
+### Compiling plugins
+
+All plugins should be compiled with -fPIC -shared in GCC or clang.
+
 Last Words
 ---------
 
