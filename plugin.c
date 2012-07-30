@@ -127,8 +127,8 @@ int hashColCk(char *s1, char *s2, uint32_t plugMax)
   return hashCol;
 }
 
-/* Unloads the plugin. You shouldn't call it, you should use plugFree(), which calls this function. Returns non-zero on
- * failure and zero on success. */
+/* Unloads the plugin. You shouldn't call it, you should use plugFree(), which calls this function.
+ * Returns non-zero on failure and zero on success. */
 
 int plugUnload(void *plugHandle)
 {
