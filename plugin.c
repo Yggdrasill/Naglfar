@@ -43,6 +43,8 @@ char *plugGetError(int plugErrorCode, char *plugErrorDetails)
   return plugErrMsg;
 }
 
+/* Allocates memory space for a plugin. It is only called by plugInstall() */
+
 plugInfo *plugAlloc(int *allocStatus)
 {
   *allocStatus = 0;
@@ -51,6 +53,8 @@ plugInfo *plugAlloc(int *allocStatus)
    *allocStatus = PLUGERR_SMEM;
   return sPlugin;
 }
+
+/* Constructs the main plugin container, and initializes all sPlugCont->sPlugin to NULL. It should be called before trying to run ANY other functions. Returns NULL on failure and a plugCont on success. */
 
 plugCont *plugContConstruct(uint32_t plugMax)
 {
@@ -72,11 +76,15 @@ plugCont *plugContConstruct(uint32_t plugMax)
   return sPlugCont;
 }
 
+/* Frees a sPlugCont->sPlugin. Called by plugFree() and plugContDestruct(). */
+
 void plugDestroy(plugInfo *sPlugin)
 {
   if(sPlugin)
     free(sPlugin);
 }
+
+/* Destroys the main plugin container. You should plugFree() all plugins before calling this. */
 
 void plugContDestruct(plugCont *sPlugCont)
 {
@@ -90,6 +98,8 @@ void plugContDestruct(plugCont *sPlugCont)
     fputs(plugGetError(PLUGERR_CNA, NULL), stderr);
 }
 
+/* Generates a hash from plugName, and then divides hash by plugMax, returning the remainder. */
+
 uint32_t genHash(char *plugName, uint32_t plugMax)
 {
   size_t cmdLen = strlen(plugName);
@@ -99,6 +109,8 @@ uint32_t genHash(char *plugName, uint32_t plugMax)
   hash %= plugMax;
   return hash;
 }
+
+/* Checks for hash collisions. Returns non-zero on collision and zero otherwise. */
 
 int hashColCk(char *s1, char *s2, uint32_t plugMax)
 {
@@ -114,6 +126,9 @@ int hashColCk(char *s1, char *s2, uint32_t plugMax)
   return hashCol;
 }
 
+/* Unloads the plugin. You shouldn't call it, you should use plugFree(), which calls this function. Returns non-zero on
+ * failure and zero on success. */
+
 int plugUnload(void *plugHandle)
 {
   int unloadStatus = dlclose(plugHandle);
@@ -121,6 +136,8 @@ int plugUnload(void *plugHandle)
     unloadStatus = PLUGERR_UNLOAD;
   return unloadStatus;
 }
+
+/* Unloads the plugin and frees the plugin information structure. Does not return anything */
 
 void plugFree(plugCont *sPlugCont, char *plugName)
 {
@@ -144,6 +161,9 @@ void plugFree(plugCont *sPlugCont, char *plugName)
   sPlugCont->sPlugin[hash] = NULL;
 }
 
+/* Loads a plugin. You shouldn't call this, you should use plugInstall(), which calls this function. Returns non-zero on
+ * failure and zero on success. */
+
 int plugLoad(plugInfo *sPlugin, char *strPath, char *strSymbol)
 {
   int loadStatus = 0;
@@ -155,6 +175,9 @@ int plugLoad(plugInfo *sPlugin, char *strPath, char *strSymbol)
     loadStatus = PLUGERR_LOAD;
   return loadStatus;
 }
+
+/* Installs a plugin and puts it in the correct sPlugCont->sPlugin[hash]. Returns non-zero on failure and zero on
+ * success. */
 
 int plugInstall(plugCont *sPlugCont, char *plugName, char *strPath, char *strSymbol)
 {
@@ -180,7 +203,7 @@ int plugInstall(plugCont *sPlugCont, char *plugName, char *strPath, char *strSym
   sPlugCont->sPlugin[hash]->plugHash = hash;
   strncpy(sPlugCont->sPlugin[hash]->plugName, plugName, 128);
   sPlugCont->plugCount++;
-  return EXIT_SUCCESS;
+  return installStatus;
 }
 
 int plugReload(plugCont *sPlugCont, char *plugName, char *strPath, char *strSymbol)
@@ -191,6 +214,8 @@ int plugReload(plugCont *sPlugCont, char *plugName, char *strPath, char *strSymb
   return reloadStatus;
 }
 
+/* Gets the function pointer from the plugin you're requesting with plugName. Returns NULL on failure and a function
+ * pointer on success. */
 funcPtr plugGetPtr(plugCont *sPlugCont, char *plugName)
 {
   uint32_t hash = genHash(plugName, sPlugCont->plugMax);

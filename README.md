@@ -10,7 +10,9 @@ License
 -------
 
 Copyright (c) Yggdrasill/Wolfie
+
 wolfie _ xlr at lavabit dot com
+
 [#hacking @ DatNode] [irc]
 
 Naglfar is released under the terms of the [GNU GPLv3] [gpl3]
@@ -35,7 +37,8 @@ This function takes an unsigned long as its input (maximum amount of plugins). I
 This function takes two arguments, which are the main plugin container and the name of a plugin. It hashes the name of the plugin and makes it fit into the main plugin container, then fills the data within sPlugCont.sPlugin + hash (the plugin information structure). On failure it throws an error and returns a non-zero integer, on success it returns 0.
 
 ### plugGetPtr()
-This function takes two arguments, which are the main plugin container and the name of a plugin. It hashes the name of the plugin, and returns the function pointer stored in sPlugCont.sPlugin + hash. On failure it throws an error and returns NULL, and returns a function pointer on success.
+
+This function takes two arguments, which are the main plugin container and the name of a plugin. It hashes the name of the plugin, and returns the function pointer stored in sPlugCont.sPlugin + hash. On failure it throws an error and returns NULL, and returns a function pointer on success. The returned function takes a void pointer as argument. It is up to you to ensure a plugins safe running.
 
 ###  plugFree()
 This function takes two arguments, which are the main plugin container and the name of a plugin. It hashes the name of the plugin, and throws an error on failure. It does not return anything.
