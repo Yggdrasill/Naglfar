@@ -54,7 +54,8 @@ plugInfo *plugAlloc(int *allocStatus)
   return sPlugin;
 }
 
-/* Constructs the main plugin container, and initializes all sPlugCont->sPlugin to NULL. It should be called before trying to run ANY other functions. Returns NULL on failure and a plugCont on success. */
+/* Constructs the main plugin container, and initializes all sPlugCont->sPlugin to NULL.
+ * It should be called before trying to run ANY other functions. Returns NULL on failure and a plugCont on success. */
 
 plugCont *plugContConstruct(uint32_t plugMax)
 {
