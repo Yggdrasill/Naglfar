@@ -19,7 +19,8 @@ char *plugGetError(int plugErrorCode, char *plugErrorDetails)
       snprintf(plugErrMsg, 1024, "You're trying to unload %s, but the plugin is not loaded\n", plugErrorDetails);
       break;
     case PLUGERR_NLOADED:
-      strncpy(plugErrMsg, "You're trying to return a function pointer for a plugin, but it does not appear to be loaded\n", 1024);
+      strncpy(plugErrMsg, "You're trying to return a function pointer for a plugin,"
+                          " but it does not appear to be loaded\n", 1024);
       break;
     case PLUGERR_LOADED:
       snprintf(plugErrMsg, 1024, "Plugin %s already loaded. Reloading is done with plugReload()\n", plugErrorDetails);
@@ -99,34 +100,6 @@ void plugContDestruct(plugCont *sPlugCont)
     fputs(plugGetError(PLUGERR_CNA, NULL), stderr);
 }
 
-/* Generates a hash from plugName, and then divides hash by plugMax, returning the remainder. */
-
-uint32_t genHash(char *plugName, uint32_t plugMax)
-{
-  size_t cmdLen = strlen(plugName);
-  uint32_t hash = 0;
-  for(size_t i = 0; i <= cmdLen; i++)
-    hash += (uint32_t)plugName[i];
-  hash %= plugMax;
-  return hash;
-}
-
-/* Checks for hash collisions. Returns non-zero on collision and zero otherwise. */
-
-int hashColCk(char *s1, char *s2, uint32_t plugMax)
-{
-  int hashCol = 0;
-  uint32_t hash = genHash(s1, plugMax);
-  uint32_t hash2 = genHash(s2, plugMax);
-  if(hash == hash2 && strcmp(s1, s2) ) {
-    char plugNames[256];
-    snprintf(plugNames, 256, "%s %s", s1, s2);
-    hashCol = PLUGERR_HASHCOL;
-    fputs(plugGetError(hashCol, plugNames), stderr);
-  }
-  return hashCol;
-}
-
 /* Unloads the plugin. You shouldn't call it, you should use plugFree(), which calls this function.
  * Returns non-zero on failure and zero on success. */
 
@@ -150,8 +123,13 @@ void plugFree(plugCont *sPlugCont, char *plugName)
     return;
   }
   unloadStatus = hashColCk(sPlugCont->sPlugin[hash]->plugName, plugName, sPlugCont->plugMax);
-  if(unloadStatus)
+  if(unloadStatus) {
+    unloadStatus = PLUGERR_HASHCOL;
+    char plugNames[256];
+    snprintf(plugNames, 256, "%s %s", sPlugCont->sPlugin[hash]->plugName, plugName);
+    fputs(plugGetError(unloadStatus, plugNames), stderr);
     return;
+  }
   unloadStatus = plugUnload(sPlugCont->sPlugin[hash]->plugHandle);
   if(unloadStatus) {
     fputs(plugGetError(unloadStatus, NULL), stderr);
@@ -186,9 +164,16 @@ int plugInstall(plugCont *sPlugCont, char *plugName, char *strPath, char *strSym
   int installStatus = 0;
   if(sPlugCont->sPlugin[hash]) {
     installStatus = hashColCk(sPlugCont->sPlugin[hash]->plugName, plugName, sPlugCont->plugMax);
-    if(!installStatus)
+    if(installStatus) {
+      installStatus = PLUGERR_HASHCOL;
+      char plugNames[256];
+      snprintf(plugNames, 1024, "%s %s", sPlugCont->sPlugin[hash]->plugName, plugName);
+      fputs(plugGetError(installStatus, plugNames), stderr);
+    }
+    else {
       installStatus = PLUGERR_LOADED;
-    fputs(plugGetError(installStatus, plugName), stderr);
+      fputs(plugGetError(installStatus, plugName), stderr);
+    }
     return installStatus;
   }
   sPlugCont->sPlugin[hash] = plugAlloc(&installStatus);

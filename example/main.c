@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include "struct.h"
-#include "../plugin.h"
+#include "../naglfar.h"
 
 /* An ugly example of how to use it. It doesn't have to be done this way. */
 

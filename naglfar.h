@@ -23,6 +23,7 @@
 #include <dlfcn.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include "../Vígríðr/vigrior.h"
 
 typedef void(*funcPtr)(void *);
 
@@ -58,8 +59,6 @@ plugInfo *plugAlloc(int *);
 plugCont *plugContConstruct(uint32_t);
 void plugDestroy(plugInfo *);
 void plugContDestruct(plugCont *);
-uint32_t genHash(char *, uint32_t);
-int hashColCk(char *, char *, uint32_t);
 int plugUnload(void *);
 void plugFree(plugCont *, char *);
 int plugLoad(plugInfo *, char *, char *);
@@ -67,4 +66,4 @@ int plugInstall(plugCont *, char *, char *, char *);
 int plugReload(plugCont *, char *, char *, char *);
 funcPtr plugGetPtr(plugCont *, char *);
 
-#include "plugin.c"
+#include "naglfar.c"
