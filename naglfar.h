@@ -23,7 +23,7 @@
 #include <dlfcn.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include "../Vígríðr/vigrior.h"
+#include "../Vigrior/vigrior.h"
 
 typedef void(*funcPtr)(void *);
 
