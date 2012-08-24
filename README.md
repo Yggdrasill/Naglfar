@@ -11,7 +11,7 @@ License
 
 Copyright (C) Yggdrasill/Wolfie
 
-[yggdrasill@lavabit.com] [email]
+  [yggdrasill@lavabit.com] [email]
 
 [#hacking @ DatNode] [irc]
 
