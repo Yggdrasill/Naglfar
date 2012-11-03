@@ -29,6 +29,14 @@ char *plugGetError(int plugErrorCode, char *plugErrorDetails)
       snprintf(plugErrMsg, 1024, "Oops! Seems like there's been a hash collision. The colliding plugin names are: %s."
                           "To fix this, rename your plugin\n", plugErrorDetails);
       break;
+    case PLUGERR_FIXHASHCOL:
+      snprintf(plugErrMsg, 1024, "There has been a fixable hash collision. The colliding plugin names are: %s."
+                          "Fixing.\n", plugErrorDetails);
+      break;
+    case PLUGERR_UFIXHASHCOL:
+      snprintf(plugErrMsg, 1024, "There has previously been a fixable hash collision. Now unloading %s, "
+                          "which should be the correct plugin\n", plugErrorDetails);
+      break;
     case PLUGERR_SMEM:
       strncpy(plugErrMsg, "Failed to allocate memory for plugin info. Not enough memory available\n", 1024);
       break;
@@ -51,39 +59,59 @@ plugInfo *plugAlloc(int *allocStatus)
   *allocStatus = 0;
   plugInfo *sPlugin = malloc(sizeof(plugInfo) );
   if(!sPlugin)
-   *allocStatus = PLUGERR_SMEM;
+    *allocStatus = PLUGERR_SMEM;
   return sPlugin;
 }
 
+plugList *listAlloc(int *allocStatus)
+{
+  *allocStatus = 0;
+  size_t size = sizeof(plugList);
+  plugList *sPlugList = calloc(size, size);
+  if(!sPlugList)
+    *allocStatus = PLUGERR_LMEM;
+  return sPlugList;
+}
 /* Constructs the main plugin container, and initializes all sPlugCont->sPlugin to NULL.
  * It should be called before trying to run ANY other functions. Returns NULL on failure and a plugCont on success. */
 
 plugCont *plugContConstruct(uint32_t plugMax)
 {
   plugCont *sPlugCont;
-  sPlugCont = malloc(sizeof(plugCont) * sizeof(plugInfo) );
+  int contStatus = 0;
+  sPlugCont = malloc(sizeof(plugCont) * sizeof(plugList) );
   if(!sPlugCont) {
-    fputs(plugGetError(PLUGERR_CMEM, NULL), stderr);
+    contStatus = PLUGERR_CMEM;
+    fputs(plugGetError(contStatus, NULL), stderr);
     return NULL;
   }
-  sPlugCont->sPlugin = malloc(plugMax * sizeof(plugInfo *) );
-  if(!sPlugCont->sPlugin)  {
-    fputs(plugGetError(PLUGERR_SMEM, NULL), stderr);
-    return NULL;
-  }
-  for(uint32_t i = 0; i <= plugMax; i++)
-    sPlugCont->sPlugin[i] = NULL;
   sPlugCont->plugMax = plugMax;
   sPlugCont->plugCount = 0;
+  sPlugCont->sPlugList = calloc(sizeof(plugList *), plugMax);
+  if(!sPlugCont->sPlugList)  {
+    contStatus = PLUGERR_SMEM;
+    fputs(plugGetError(contStatus, NULL), stderr);
+    plugContDestruct(sPlugCont);
+    return NULL;
+  }
   return sPlugCont;
 }
 
 /* Frees a sPlugCont->sPlugin. Called by plugFree() and plugContDestruct(). */
 
-void plugDestroy(plugInfo *sPlugin)
+void plugDestroy(plugInfo **sPlugin)
 {
-  if(sPlugin)
-    free(sPlugin);
+   if(*sPlugin) {
+    free(*sPlugin);
+  }
+  *sPlugin = NULL;
+}
+
+void listDestroy(plugList **sPlugList)
+{
+  if(*sPlugList)
+    free(*sPlugList);
+  *sPlugList = NULL;
 }
 
 /* Destroys the main plugin container. You should plugFree() all plugins before calling this. */
@@ -91,10 +119,14 @@ void plugDestroy(plugInfo *sPlugin)
 void plugContDestruct(plugCont *sPlugCont)
 {
   if(sPlugCont) {
-    while(sPlugCont->plugMax--)
-      plugDestroy(sPlugCont->sPlugin[sPlugCont->plugMax]);
-    free(sPlugCont->sPlugin);
+    while(sPlugCont->plugMax--) {
+      listDestroy(&sPlugCont->sPlugList[sPlugCont->plugMax]);
+      sPlugCont->sPlugList[sPlugCont->plugMax] = NULL;
+    }
+    free(sPlugCont->sPlugList);
+    sPlugCont->sPlugList = NULL;
     free(sPlugCont);
+    sPlugCont = NULL;
   }
   else
     fputs(plugGetError(PLUGERR_CNA, NULL), stderr);
@@ -118,26 +150,36 @@ void plugFree(plugCont *sPlugCont, char *plugName)
   uint32_t hash = 0;
   hash = genHash(plugName, sPlugCont->plugMax);
   int unloadStatus = 0;
-  if(!sPlugCont->sPlugin[hash]) {
-    fputs(plugGetError(PLUGERR_NUNLOAD, plugName), stderr);
-    return;
+  int plugin = 0;
+  for(int i = 0; i < 2; i++) {
+    if(sPlugCont->sPlugList[hash]->sPlugin[i]) {
+      unloadStatus =  hashColCk(sPlugCont->sPlugList[hash]->sPlugin[i]->plugName, plugName, sPlugCont->plugMax);
+      if(!unloadStatus) {
+        plugin = i;
+        break;
+      }
+      else if(unloadStatus && sPlugCont->sPlugList[hash]->hashCol)
+        unloadStatus = PLUGERR_UFIXHASHCOL;
+    }
+    else if(i)
+      unloadStatus = PLUGERR_NUNLOAD;
   }
-  unloadStatus = hashColCk(sPlugCont->sPlugin[hash]->plugName, plugName, sPlugCont->plugMax);
-  if(unloadStatus) {
-    unloadStatus = PLUGERR_HASHCOL;
-    char plugNames[256];
-    snprintf(plugNames, 256, "%s %s", sPlugCont->sPlugin[hash]->plugName, plugName);
-    fputs(plugGetError(unloadStatus, plugNames), stderr);
-    return;
+  switch(unloadStatus) {
+    case PLUGERR_NONE:
+      unloadStatus = plugUnload(sPlugCont->sPlugList[hash]->sPlugin[plugin]->plugHandle);
+      break;
+    case PLUGERR_UFIXHASHCOL:
+      fputs(plugGetError(unloadStatus, sPlugCont->sPlugList[hash]->sPlugin[plugin]->plugName), stderr);
+      unloadStatus = plugUnload(sPlugCont->sPlugList[hash]->sPlugin[plugin]->plugHandle);
+      break;
+    case PLUGERR_NUNLOAD:
+      fputs(plugGetError(unloadStatus, plugName), stderr);
+      break;
+    default:
+      fputs(plugGetError(unloadStatus, NULL), stderr);
   }
-  unloadStatus = plugUnload(sPlugCont->sPlugin[hash]->plugHandle);
-  if(unloadStatus) {
-    fputs(plugGetError(unloadStatus, NULL), stderr);
-    return;
-  }
-  plugDestroy(sPlugCont->sPlugin[hash]);
+  plugDestroy(&sPlugCont->sPlugList[hash]->sPlugin[plugin]);
   sPlugCont->plugCount--;
-  sPlugCont->sPlugin[hash] = NULL;
 }
 
 /* Loads a plugin. You shouldn't call this, you should use plugInstall(), which calls this function. Returns non-zero on
@@ -155,6 +197,24 @@ int plugLoad(plugInfo *sPlugin, char *strPath, char *strSymbol)
   return loadStatus;
 }
 
+int plugPrepare(plugInfo **sPlugin, uint32_t plugHash, char *plugName, char *strPath, char *strSymbol)
+{
+  int prepStatus = 0;
+  *sPlugin = plugAlloc(&prepStatus);
+  if(prepStatus) {
+    fputs(plugGetError(prepStatus, NULL), stderr);
+    return prepStatus;
+  }
+  prepStatus = plugLoad(*sPlugin, strPath, strSymbol);
+  if(prepStatus) {
+    fputs(plugGetError(prepStatus, NULL), stderr);
+    return prepStatus;
+  }
+  (*sPlugin)->plugHash = plugHash;
+  strncpy( (*sPlugin)->plugName, plugName, 128);
+  return prepStatus;
+}
+
 /* Installs a plugin and puts it in the correct sPlugCont->sPlugin[hash]. Returns non-zero on failure and zero on
  * success. */
 
@@ -162,32 +222,42 @@ int plugInstall(plugCont *sPlugCont, char *plugName, char *strPath, char *strSym
 {
   uint32_t hash = genHash(plugName, sPlugCont->plugMax);
   int installStatus = 0;
-  if(sPlugCont->sPlugin[hash]) {
-    installStatus = hashColCk(sPlugCont->sPlugin[hash]->plugName, plugName, sPlugCont->plugMax);
-    if(installStatus) {
+  int plugin = 0;
+  if(!sPlugCont->sPlugList[hash])
+    sPlugCont->sPlugList[hash] = listAlloc(&installStatus);
+  else if(sPlugCont->sPlugList[hash]->sPlugin[plugin]) {
+    installStatus = hashColCk(sPlugCont->sPlugList[hash]->sPlugin[plugin]->plugName, plugName, sPlugCont->plugMax);
+    if(installStatus && sPlugCont->sPlugList[hash]->hashCol)
       installStatus = PLUGERR_HASHCOL;
-      char plugNames[256];
-      snprintf(plugNames, 1024, "%s %s", sPlugCont->sPlugin[hash]->plugName, plugName);
-      fputs(plugGetError(installStatus, plugNames), stderr);
+    else if(installStatus && !sPlugCont->sPlugList[hash]->hashCol) {
+      installStatus = PLUGERR_FIXHASHCOL;
+      plugin = 1;
     }
-    else {
+    else if(!installStatus)
       installStatus = PLUGERR_LOADED;
+  }
+  char plugNames[256];
+  switch(installStatus) {
+    case 0:
+      installStatus = plugPrepare(&sPlugCont->sPlugList[hash]->sPlugin[plugin], hash, plugName,  strPath, strSymbol);
+      sPlugCont->sPlugList[hash]->hashCol = 0;
+      break;
+    case PLUGERR_FIXHASHCOL:
+      installStatus = plugPrepare(&sPlugCont->sPlugList[hash]->sPlugin[plugin], hash, plugName, strPath, strSymbol);
+      snprintf(plugNames, 256, "%s %s", sPlugCont->sPlugList[hash]->sPlugin[!plugin]->plugName, plugName);
+      fputs(plugGetError(PLUGERR_FIXHASHCOL, plugNames), stderr);
+      sPlugCont->sPlugList[hash]->hashCol = 1;
+      break;
+    case PLUGERR_HASHCOL:
+      snprintf(plugNames, 256, "%s %s", sPlugCont->sPlugList[hash]->sPlugin[plugin]->plugName, plugName);
+      fputs(plugGetError(installStatus, plugNames), stderr);
+      break;
+    case PLUGERR_LOADED:
       fputs(plugGetError(installStatus, plugName), stderr);
-    }
-    return installStatus;
+      break;
+    default:
+      fputs(plugGetError(installStatus, NULL), stderr);
   }
-  sPlugCont->sPlugin[hash] = plugAlloc(&installStatus);
-  if(installStatus) {
-    fputs(plugGetError(installStatus, NULL), stderr);
-    return installStatus;
-  }
-  installStatus = plugLoad(sPlugCont->sPlugin[hash], strPath, strSymbol);
-  if(installStatus) {
-    fputs(plugGetError(installStatus, NULL), stderr);
-    return installStatus;
-  }
-  sPlugCont->sPlugin[hash]->plugHash = hash;
-  strncpy(sPlugCont->sPlugin[hash]->plugName, plugName, 128);
   sPlugCont->plugCount++;
   return installStatus;
 }
@@ -202,12 +272,21 @@ int plugReload(plugCont *sPlugCont, char *plugName, char *strPath, char *strSymb
 
 /* Gets the function pointer from the plugin you're requesting with plugName. Returns NULL on failure and a function
  * pointer on success. */
+
 funcPtr plugGetPtr(plugCont *sPlugCont, char *plugName)
 {
   uint32_t hash = genHash(plugName, sPlugCont->plugMax);
-  if(!sPlugCont->sPlugin[hash]) {
+  int status = 0;
+  int plugin = 0;
+  if(sPlugCont->sPlugList[hash]->hashCol) {
+    status = hashColCk(sPlugCont->sPlugList[hash]->sPlugin[plugin]->plugName, plugName, sPlugCont->plugMax);
+    if(status)
+      plugin = 1;
+  }
+  if(!sPlugCont->sPlugList[hash]->sPlugin[plugin]) {
     fputs(plugGetError(PLUGERR_NLOADED, NULL), stderr);
     return NULL;
   }
-  return sPlugCont->sPlugin[hash]->funcPointer;
+  return sPlugCont->sPlugList[hash]->sPlugin[plugin]->funcPointer;
+
 }

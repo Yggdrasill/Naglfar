@@ -31,11 +31,16 @@ typedef struct {
   void *plugHandle;
   funcPtr funcPointer;
   char plugName[128];
-  uint64_t plugHash;
+  uint32_t plugHash;
 } plugInfo;
 
 typedef struct {
-  plugInfo **sPlugin;
+  plugInfo *sPlugin[2];
+  int hashCol;
+} plugList;
+
+typedef struct {
+  plugList **sPlugList;
   uint32_t plugCount;
   uint32_t plugMax;
 } plugCont;
@@ -49,19 +54,25 @@ enum plugErrCodes {
   PLUGERR_NLOADED,
   PLUGERR_LOADED,
   PLUGERR_HASHCOL,
+  PLUGERR_FIXHASHCOL,
+  PLUGERR_UFIXHASHCOL,
   PLUGERR_SMEM,
+  PLUGERR_LMEM,
   PLUGERR_CMEM,
   PLUGERR_CNA
 } plugErrCode;
 
 char *plugGetError(int, char *);
 plugInfo *plugAlloc(int *);
+plugList *listAlloc(int *);
 plugCont *plugContConstruct(uint32_t);
-void plugDestroy(plugInfo *);
+void plugDestroy(plugInfo **);
+void listDestroy(plugList **);
 void plugContDestruct(plugCont *);
 int plugUnload(void *);
 void plugFree(plugCont *, char *);
 int plugLoad(plugInfo *, char *, char *);
+int plugPrepare(plugInfo **, uint32_t, char *, char *, char *);
 int plugInstall(plugCont *, char *, char *, char *);
 int plugReload(plugCont *, char *, char *, char *);
 funcPtr plugGetPtr(plugCont *, char *);
