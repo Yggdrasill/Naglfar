@@ -62,17 +62,18 @@ enum plugErrCodes {
   PLUGERR_CNA
 } plugErrCode;
 
-char *plugGetError(int, char *);
-plugInfo *plugAlloc(int *);
-plugList *listAlloc(int *);
+static char *plugGetError(int, char *);
+static plugInfo *plugAlloc(int *);
+static plugList *listAlloc(int *);
+static void plugDestroy(plugInfo **);
+static void listDestroy(plugList **);
+static int plugUnload(void *);
+static int plugLoad(plugInfo *, char *, char *);
+static int plugPrepare(plugInfo **, uint32_t, char *, char *, char *);
+
 plugCont *plugContConstruct(uint32_t);
-void plugDestroy(plugInfo **);
-void listDestroy(plugList **);
 void plugContDestruct(plugCont *);
-int plugUnload(void *);
 void plugFree(plugCont *, char *);
-int plugLoad(plugInfo *, char *, char *);
-int plugPrepare(plugInfo **, uint32_t, char *, char *, char *);
 int plugInstall(plugCont *, char *, char *, char *);
 int plugReload(plugCont *, char *, char *, char *);
 funcPtr plugGetPtr(plugCont *, char *);

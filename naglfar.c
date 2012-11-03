@@ -1,4 +1,4 @@
-char *plugGetError(int plugErrorCode, char *plugErrorDetails)
+static char *plugGetError(int plugErrorCode, char *plugErrorDetails)
 {
   static char plugErrMsg[1024];
   switch(plugErrorCode)
@@ -54,7 +54,7 @@ char *plugGetError(int plugErrorCode, char *plugErrorDetails)
 
 /* Allocates memory space for a plugin. It is only called by plugInstall() */
 
-plugInfo *plugAlloc(int *allocStatus)
+static plugInfo *plugAlloc(int *allocStatus)
 {
   *allocStatus = 0;
   plugInfo *sPlugin = malloc(sizeof(plugInfo) );
@@ -63,7 +63,7 @@ plugInfo *plugAlloc(int *allocStatus)
   return sPlugin;
 }
 
-plugList *listAlloc(int *allocStatus)
+static plugList *listAlloc(int *allocStatus)
 {
   *allocStatus = 0;
   size_t size = sizeof(plugList);
@@ -99,7 +99,7 @@ plugCont *plugContConstruct(uint32_t plugMax)
 
 /* Frees a sPlugCont->sPlugin. Called by plugFree() and plugContDestruct(). */
 
-void plugDestroy(plugInfo **sPlugin)
+static void plugDestroy(plugInfo **sPlugin)
 {
    if(*sPlugin) {
     free(*sPlugin);
@@ -107,7 +107,7 @@ void plugDestroy(plugInfo **sPlugin)
   *sPlugin = NULL;
 }
 
-void listDestroy(plugList **sPlugList)
+static void listDestroy(plugList **sPlugList)
 {
   if(*sPlugList)
     free(*sPlugList);
@@ -135,7 +135,7 @@ void plugContDestruct(plugCont *sPlugCont)
 /* Unloads the plugin. You shouldn't call it, you should use plugFree(), which calls this function.
  * Returns non-zero on failure and zero on success. */
 
-int plugUnload(void *plugHandle)
+static int plugUnload(void *plugHandle)
 {
   int unloadStatus = dlclose(plugHandle);
   if(unloadStatus)
@@ -185,7 +185,7 @@ void plugFree(plugCont *sPlugCont, char *plugName)
 /* Loads a plugin. You shouldn't call this, you should use plugInstall(), which calls this function. Returns non-zero on
  * failure and zero on success. */
 
-int plugLoad(plugInfo *sPlugin, char *strPath, char *strSymbol)
+static int plugLoad(plugInfo *sPlugin, char *strPath, char *strSymbol)
 {
   int loadStatus = 0;
   sPlugin->plugHandle = dlopen(strPath, RTLD_NOW);
@@ -197,7 +197,7 @@ int plugLoad(plugInfo *sPlugin, char *strPath, char *strSymbol)
   return loadStatus;
 }
 
-int plugPrepare(plugInfo **sPlugin, uint32_t plugHash, char *plugName, char *strPath, char *strSymbol)
+static int plugPrepare(plugInfo **sPlugin, uint32_t plugHash, char *plugName, char *strPath, char *strSymbol)
 {
   int prepStatus = 0;
   *sPlugin = plugAlloc(&prepStatus);
