@@ -9,18 +9,18 @@ int main(void)
                   "/path/to/plugin2"};
   char *name[2] = {"abc", "bac"};
   char *msg[2] = {"h\nh", "hhhh\nh   h\nh   h"};
-  plugCont *sPlugCont = plugContConstruct(256);
-  plugData sPlugData;
-  funcPtr funcPointer;
+  pcontainer *container = plug_construct(256);
+  pdata data;
+  func_ptr function_ptr;
   for(int i = 0; i < 2; i++) {
-    if(!plugInstall(sPlugCont, name[i], path[i], "init_func") ) {
-      funcPointer = plugGetPtr(sPlugCont, name[i]);
-      strncpy(sPlugData.outputString, msg[i], 128);
-      funcPointer(&sPlugData);
+    if(!install(container, name[i], path[i], "init_func") ) {
+      function_ptr = getptr(container, name[i]);
+      strncpy(data.string, msg[i], 128);
+      function_ptr(&data);
     }
   }
-  plugFree(sPlugCont, name[1]);
-  plugFree(sPlugCont, name[0]);
-  plugContDestruct(sPlugCont);
+  uninstall(container, name[1]);
+  uninstall(container, name[0]);
+  plug_destruct(container);
   return 0;
 }

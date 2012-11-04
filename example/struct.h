@@ -1,4 +1,4 @@
 typedef struct {
-  char outputString[128];
-} plugData;
+  char string[128];
+} pdata;
 

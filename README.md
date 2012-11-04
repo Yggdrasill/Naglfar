@@ -27,24 +27,29 @@ Usage
 -----
 As previously stated in this README, Naglfar is intended to abstract away many frustrations with plugin loading in C. This is done by giving you only five functions that are necessary to call in order to load a plugin, get a callable function pointer to the plugin and unloading the plugin. These functions are:
 
-### plugContConstruct()
+### plug _ construct()
 
 This function takes an unsigned long as its input (maximum amount of plugins). It allocates memory to a main plugin container that holds the amount of plugins loaded, the max amount of plugins and an array of datastructures that contain the plugins themselves, and various information related to it. On failure it throws an error and returns NULL, and returns the main plugin container on success.
 
-### plugInstall()
+### install()
 
-This function takes four arguments, which are the main plugin container, the name of a plugin, the path to the plugin and the symbol to look for in the compiled plugin. It hashes the name of the plugin and makes it fit into the main plugin container, then fills the data within sPlugCont.sPlugin + hash (the plugin information structure). On failure it throws an error and returns a non-zero integer, on success it returns 0.
+This function takes four arguments, which are the main plugin container, the name of a plugin, the path to the plugin and the symbol to look for in the compiled plugin. It hashes the name of the plugin and makes it fit into the main plugin container, then fills the data within the correct plugin information structure. On failure it throws an error and returns a non-zero integer, on success it returns 0.
 
-### plugGetPtr()
+### getptr()
 
-This function takes two arguments, which are the main plugin container and the name of a plugin. It hashes the name of the plugin, and returns the function pointer stored in sPlugCont.sPlugin + hash. On failure it throws an error and returns NULL, and returns a function pointer on success. The returned function takes a void pointer as argument. It is up to you to ensure a plugins safe running.
+This function takes two arguments, which are the main plugin container and the name of a plugin. It hashes the name of the plugin, and returns the function pointer the plugin. On failure it throws an error and returns NULL, and returns a function pointer on success. The returned function takes a void pointer as argument. It is up to you to ensure a plugins safe running.
 
-###  plugFree()
+### uninstall()
+
 This function takes two arguments, which are the main plugin container and the name of a plugin. It hashes the name of the plugin, and throws an error on failure. It does not return anything.
 
-### plugContDestruct()
+### reinstall()
 
-This function takes the main plugin container as its argument, and frees the main plugin container. If the main plugin container is not malloced, it will throw an error. It does not return anything. Note that you have to plugFree() your plugins, as this is not done by this function.
+This function takes four arguments, which are the main plugin container, the name of the plugin, the path to the plugin and the symbol to look for. Internally it calls uninstall() and then calls install(). It return non-zero on failure and 0 on success.
+
+### plug _ destruct()
+
+This function takes the main plugin container as its argument, and frees the main plugin container. If the main plugin container is not malloced, it will throw an error. It does not return anything. Note that you have to uninstall() your plugins, as this is not done by this function.
 
 Last Words
 ---------

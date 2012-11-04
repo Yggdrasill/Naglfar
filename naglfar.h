@@ -25,25 +25,25 @@
 #include <stdint.h>
 #include "../Vigrior/vigrior.h"
 
-typedef void(*funcPtr)(void *);
+typedef void(*func_ptr)(void *);
 
 typedef struct {
-  void *plugHandle;
-  funcPtr funcPointer;
-  char plugName[128];
-  uint32_t plugHash;
-} plugInfo;
+  void *handle;
+  func_ptr function_ptr;
+  char name[128];
+  uint32_t hash;
+} pinfo;
 
 typedef struct {
-  plugInfo *sPlugin[2];
-  int hashCol;
-} plugList;
+  pinfo *plugin[2];
+  int hash_col;
+} plist;
 
 typedef struct {
-  plugList **sPlugList;
-  uint32_t plugCount;
-  uint32_t plugMax;
-} plugCont;
+  plist **list;
+  uint32_t count;
+  uint32_t max;
+} pcontainer;
 
 enum plugErrCodes {
   PLUGERR_NONE = 0,
@@ -60,22 +60,22 @@ enum plugErrCodes {
   PLUGERR_LMEM,
   PLUGERR_CMEM,
   PLUGERR_CNA
-} plugErrCode;
+} p_error_codes;
 
-static char *plugGetError(int, char *);
-static plugInfo *plugAlloc(int *);
-static plugList *listAlloc(int *);
-static void plugDestroy(plugInfo **);
-static void listDestroy(plugList **);
-static int plugUnload(void *);
-static int plugLoad(plugInfo *, char *, char *);
-static int plugPrepare(plugInfo **, uint32_t, char *, char *, char *);
+static char *plugerr(int, char *);
+static pinfo *plug_alloc(int *);
+static plist *list_alloc(int *);
+static void plug_destroy(pinfo **);
+static void list_destroy(plist **);
+static int unload(void *);
+static int load(pinfo *, char *, char *);
+static int prepare(pinfo **, uint32_t, char *, char *, char *);
 
-plugCont *plugContConstruct(uint32_t);
-void plugContDestruct(plugCont *);
-void plugFree(plugCont *, char *);
-int plugInstall(plugCont *, char *, char *, char *);
-int plugReload(plugCont *, char *, char *, char *);
-funcPtr plugGetPtr(plugCont *, char *);
+pcontainer *plug_construct(uint32_t);
+void plug_destruct(pcontainer *);
+void uninstall(pcontainer *, char *);
+int install(pcontainer *, char *, char *, char *);
+int reinstall(pcontainer *, char *, char *, char *);
+func_ptr getptr(pcontainer *, char *);
 
 #include "naglfar.c"
