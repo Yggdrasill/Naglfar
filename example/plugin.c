@@ -1,7 +1,6 @@
 #include <stdio.h>
-#include "struct.h"
 
-void init_func(plugData *sPlugData)
+void init_func(char *string)
 {
-  puts(sPlugData->outputString);
+  fputs(string, stdout);
 }

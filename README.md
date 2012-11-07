@@ -4,14 +4,14 @@ Naglfar Plugin Framework
 About
 -------
 
-Naglfar is an abstract framework for plugins, based upon libdl. It's intended to abstract away the memory management of plugin loading into easily usable functions, while giving you descriptive error messages when something goes wrong. It is written to be extensible and usable in any scenario, with as few limitations as possible. All plugins should be compiled with -fPIC -shared in either gcc or clang, I do not know the compilation options for other compilers.
+Naglfar is an abstract framework for plugins, based upon libdl. It's intended to abstract away the memory management of plugin loading into easily usable functions, be thread-safe and give you error messages of what goes wrong if something does go wrong. It is written to be extensible and usable in any scenario, with as few limitations as possible. All plugins should be compiled with -fPIC -shared in either gcc or clang, I do not know the compilation options for other compilers.
 
 License
 -------
 
 Copyright (C) Yggdrasill/Wolfie
 
-  [yggdrasill@lavabit.com] [email]
+[yggdrasill@lavabit.com] [email]
 
 [#hacking @ DatNode] [irc]
 
@@ -49,7 +49,9 @@ This function takes four arguments, which are the main plugin container, the nam
 
 ### plug _ destruct()
 
-This function takes the main plugin container as its argument, and frees the main plugin container. If the main plugin container is not malloced, it will throw an error. It does not return anything. Note that you have to uninstall() your plugins, as this is not done by this function.
+This function takes the main plugin container as its argument, and frees the main plugin container. If the main plugin container is not malloced, it will throw an error. It does not return anything.
+
+NOTE: This function _IS NOT_ thread-safe, it WILL destroy all your plugins.
 
 Last Words
 ---------

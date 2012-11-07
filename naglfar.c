@@ -1,6 +1,7 @@
 static char *plugerr(int perror, char *details)
 {
   static char error_msg[1024];
+
   switch(perror)
   {
     case PLUGERR_NONE:
@@ -26,11 +27,11 @@ static char *plugerr(int perror, char *details)
       snprintf(error_msg, 1024, "Plugin %s already loaded. reinstalling is done with reinstall()\n", details);
       break;
     case PLUGERR_HASHCOL:
-      snprintf(error_msg, 1024, "Oops! Seems like there's been a hash collision. The colliding plugin names are: %s."
+      snprintf(error_msg, 1024, "Oops! Seems like there's been a hash collision. The colliding plugin names are: %s. "
                           "To fix this, rename your plugin\n", details);
       break;
     case PLUGERR_FIXHASHCOL:
-      snprintf(error_msg, 1024, "There has been a fixable hash collision. The colliding plugin names are: %s."
+      snprintf(error_msg, 1024, "There has been a fixable hash collision. The colliding plugin names are: %s. "
                           "Fixing.\n", details);
       break;
     case PLUGERR_UFIXHASHCOL:
@@ -49,29 +50,40 @@ static char *plugerr(int perror, char *details)
     default:
       strncpy(error_msg, "I have no idea WHAT the fuck is going on\n", 1024);
   }
+
   return error_msg;
 }
 
-/* Allocates memory space for a plugin. It is only called by install() */
+/* Allocates memory space for a plugin. It is only called by prepare() */
 
 static pinfo *plug_alloc(int *status)
 {
   *status = 0;
   pinfo *plugin = malloc(sizeof(pinfo) );
+
   if(!plugin)
     *status = PLUGERR_SMEM;
+
   return plugin;
 }
+
+/* Allocates memory space for a plugin list. It is only called by install() */
 
 static plist *list_alloc(int *status)
 {
   *status = 0;
   size_t size = sizeof(plist);
   plist *list = calloc(size, size);
+
   if(!list)
     *status = PLUGERR_LMEM;
+  #ifdef THREADING
+    else
+      pthread_mutex_init(&list->listmutex, NULL);
+  #endif
   return list;
 }
+
 /* Constructs the main plugin container, and initializes all container->plugin to NULL.
  * It should be called before trying to run ANY other functions. Returns NULL on failure and a pcontainer on success. */
 
@@ -80,20 +92,28 @@ pcontainer *plug_construct(uint32_t max)
   pcontainer *container;
   int status = 0;
   container = malloc(sizeof(pcontainer) * sizeof(plist) );
+
+  #ifdef THREADING
+    pthread_mutex_init(&container->allocmutex, NULL);
+  #endif
+
   if(!container) {
     status = PLUGERR_CMEM;
     fputs(plugerr(status, NULL), stderr);
     return NULL;
   }
+
   container->max = max;
   container->count = 0;
   container->list = calloc(sizeof(plist *), max);
+
   if(!container->list)  {
     status = PLUGERR_SMEM;
     fputs(plugerr(status, NULL), stderr);
     plug_destruct(container);
     return NULL;
   }
+
   return container;
 }
 
@@ -109,8 +129,12 @@ static void plug_destroy(pinfo **plugin)
 
 static void list_destroy(plist **list)
 {
-  if(*list)
+  if(*list) {
+    #ifdef THREADING
+      pthread_mutex_destroy(&(*list)->listmutex);
+    #endif
     free(*list);
+  }
   *list = NULL;
 }
 
@@ -119,7 +143,18 @@ static void list_destroy(plist **list)
 void plug_destruct(pcontainer *container)
 {
   if(container) {
+    #ifdef THREADING
+      pthread_mutex_destroy(&container->allocmutex);
+    #endif
     while(container->max--) {
+      if(container->list[container->max]) {
+        for(int i = 0; i < 2; i++) {
+          if(container->list[container->max]->plugin[i]) {
+            dlclose(container->list[container->max]->plugin[i]->handle);
+            free(container->list[container->max]->plugin[i]);
+          }
+        }
+      }
       list_destroy(&container->list[container->max]);
       container->list[container->max] = NULL;
     }
@@ -138,8 +173,10 @@ void plug_destruct(pcontainer *container)
 static int unload(void *handle)
 {
   int status = dlclose(handle);
+
   if(status)
     status = PLUGERR_UNLOAD;
+
   return status;
 }
 
@@ -151,6 +188,11 @@ void uninstall(pcontainer *container, char *name)
   hash = gen_hash(name, container->max);
   int status = 0;
   int plugin_num = 0;
+
+  #ifdef THREADING
+    pthread_mutex_lock(&container->list[hash]->listmutex);
+  #endif
+
   for(int i = 0; i < 2; i++) {
     if(container->list[hash]->plugin[i]) {
       status =  check_hash(container->list[hash]->plugin[i]->name, name, container->max);
@@ -164,6 +206,7 @@ void uninstall(pcontainer *container, char *name)
     else if(i)
       status = PLUGERR_NUNLOAD;
   }
+
   switch(status) {
     case PLUGERR_NONE:
       status = unload(container->list[hash]->plugin[plugin_num]->handle);
@@ -178,8 +221,13 @@ void uninstall(pcontainer *container, char *name)
     default:
       fputs(plugerr(status, NULL), stderr);
   }
+
   plug_destroy(&container->list[hash]->plugin[plugin_num]);
   container->count--;
+
+  #ifdef THREADING
+    pthread_mutex_unlock(&container->list[hash]->listmutex);
+  #endif
 }
 
 /* Loads a plugin. You shouldn't call this, you should use install(), which calls this function. Returns non-zero on
@@ -189,18 +237,26 @@ static int load(pinfo *plugin, char *path, char *symbol)
 {
   int status = 0;
   plugin->handle = dlopen(path, RTLD_NOW);
+
   if(!plugin->handle)
     return status = PLUGERR_OPEN;
+
   plugin->function_ptr = (func_ptr)dlsym(plugin->handle, symbol);
+
   if(!plugin->function_ptr)
     status = PLUGERR_LOAD;
+
   return status;
 }
+
+/* Prepares memory for plugin loading and loads it. Install() calls this function. Returns non-zero on failure and zero
+ * on success */
 
 static int prepare(pinfo **plugin, uint32_t hash, char *name, char *path, char *symbol)
 {
   int status = 0;
   *plugin = plug_alloc(&status);
+
   if(status) {
     fputs(plugerr(status, NULL), stderr);
     return status;
@@ -210,8 +266,10 @@ static int prepare(pinfo **plugin, uint32_t hash, char *name, char *path, char *
     fputs(plugerr(status, NULL), stderr);
     return status;
   }
+
   (*plugin)->hash = hash;
   strncpy( (*plugin)->name, name, 128);
+
   return status;
 }
 
@@ -223,9 +281,24 @@ int install(pcontainer *container, char *name, char *path, char *symbol)
   uint32_t hash = gen_hash(name, container->max);
   int status = 0;
   int plugin_num = 0;
-  if(!container->list[hash])
-    container->list[hash] = list_alloc(&status);
-  else if(container->list[hash]->plugin[plugin_num]) {
+  int hasalloced = 0;
+  char names[256];
+
+  #ifdef THREADING
+    pthread_mutex_lock(&container->allocmutex);
+  #endif
+
+  if(!container->list[hash]) {
+    if( (container->list[hash] = list_alloc(&status) ) )
+      hasalloced = 1;
+  }
+
+  #ifdef THREADING
+    pthread_mutex_unlock(&container->allocmutex);
+    pthread_mutex_lock(&container->list[hash]->listmutex);
+  #endif
+
+  if(!hasalloced && container->list[hash]->plugin[plugin_num]) {
     status = check_hash(container->list[hash]->plugin[plugin_num]->name, name, container->max);
     if(status && container->list[hash]->hash_col)
       status = PLUGERR_HASHCOL;
@@ -236,17 +309,19 @@ int install(pcontainer *container, char *name, char *path, char *symbol)
     else if(!status)
       status = PLUGERR_LOADED;
   }
-  char names[256];
+
   switch(status) {
     case 0:
       status = prepare(&container->list[hash]->plugin[plugin_num], hash, name,  path, symbol);
       container->list[hash]->hash_col = 0;
+      container->count++;
       break;
     case PLUGERR_FIXHASHCOL:
       status = prepare(&container->list[hash]->plugin[plugin_num], hash, name, path, symbol);
       snprintf(names, 256, "%s %s", container->list[hash]->plugin[!plugin_num]->name, name);
       fputs(plugerr(PLUGERR_FIXHASHCOL, names), stderr);
       container->list[hash]->hash_col = 1;
+      container->count++;
       break;
     case PLUGERR_HASHCOL:
       snprintf(names, 256, "%s %s", container->list[hash]->plugin[plugin_num]->name, name);
@@ -258,35 +333,53 @@ int install(pcontainer *container, char *name, char *path, char *symbol)
     default:
       fputs(plugerr(status, NULL), stderr);
   }
-  container->count++;
+
+  #ifdef THREADING
+    pthread_mutex_unlock(&container->list[hash]->listmutex);
+  #endif
+
   return status;
 }
+
+/* Reinstalls the plugin. Use this if you need to reload a plugin. */
 
 int reinstall(pcontainer *container, char *name, char *path, char *symbol)
 {
   int status = 0;
+
   uninstall(container, name);
   status = install(container, name, path, symbol);
+
   return status;
 }
 
 /* Gets the function pointer from the plugin you're requesting with name. Returns NULL on failure and a function
  * pointer on success. */
 
-func_ptr getptr(pcontainer *container, char *name)
+static func_ptr getptr(pcontainer *container, char *name, int hash, int plugin_num)
+{
+  return container->list[hash]->plugin[plugin_num]->function_ptr;
+}
+
+void* plug_exec(pcontainer *container, char *name, void *data)
 {
   uint32_t hash = gen_hash(name, container->max);
   int status = 0;
   int plugin_num = 0;
+
+  func_ptr fptr;
+
   if(container->list[hash]->hash_col) {
     status = check_hash(container->list[hash]->plugin[plugin_num]->name, name, container->max);
-    if(status)
-      plugin_num = 1;
+    if(status) plugin_num = 1;
   }
   if(!container->list[hash]->plugin[plugin_num]) {
     fputs(plugerr(PLUGERR_NLOADED, NULL), stderr);
     return NULL;
   }
-  return container->list[hash]->plugin[plugin_num]->function_ptr;
 
+  fptr = getptr(container, name, hash, plugin_num);
+  fptr(data);
+
+  return fptr;
 }

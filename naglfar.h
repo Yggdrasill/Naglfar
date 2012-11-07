@@ -17,13 +17,18 @@
  *
  */
 
-#define _POSIX_C_SOURCE 200809L
+#define POSIX_C_SOURCE 199309L
 #include <stdio.h>
 #include <string.h>
 #include <dlfcn.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <unistd.h>
 #include "../Vigrior/vigrior.h"
+
+#ifdef THREADING
+  #include <pthread.h>
+#endif
 
 typedef void(*func_ptr)(void *);
 
@@ -32,17 +37,26 @@ typedef struct {
   func_ptr function_ptr;
   char name[128];
   uint32_t hash;
+  #ifdef THREADING
+    pthread_mutex_t pluginmutex;
+  #endif
 } pinfo;
 
 typedef struct {
   pinfo *plugin[2];
   int hash_col;
+  #ifdef THREADING
+    pthread_mutex_t listmutex;
+  #endif
 } plist;
 
 typedef struct {
   plist **list;
   uint32_t count;
   uint32_t max;
+  #ifdef THREADING
+    pthread_mutex_t allocmutex;
+  #endif
 } pcontainer;
 
 enum plugErrCodes {
@@ -70,12 +84,13 @@ static void list_destroy(plist **);
 static int unload(void *);
 static int load(pinfo *, char *, char *);
 static int prepare(pinfo **, uint32_t, char *, char *, char *);
+static func_ptr getptr(pcontainer *, char *, int, int);
 
 pcontainer *plug_construct(uint32_t);
 void plug_destruct(pcontainer *);
 void uninstall(pcontainer *, char *);
 int install(pcontainer *, char *, char *, char *);
 int reinstall(pcontainer *, char *, char *, char *);
-func_ptr getptr(pcontainer *, char *);
+void* plug_exec(pcontainer *, char *, void *);
 
 #include "naglfar.c"
