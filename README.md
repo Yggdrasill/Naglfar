@@ -25,7 +25,10 @@ any version of this software, nor can you add any restrictions beyond those outl
 
 Usage
 -----
-As previously stated in this README, Naglfar is intended to abstract away many frustrations with plugin loading in C. This is done by giving you only five functions that are necessary to call in order to load a plugin, get a callable function pointer to the plugin and unloading the plugin. These functions are:
+
+_For thread-safety, you should define THREADING._
+
+As previously stated in this README, Naglfar is intended to abstract away some frustrations with plugin loading in C. This is done by giving you only five functions (and one optional function) that are necessary to call in order to load a plugin, execute the plugin and unloading the plugin. These functions are:
 
 ### plug _ construct()
 
