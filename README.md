@@ -35,9 +35,9 @@ This function takes an unsigned long as its input (maximum amount of plugins). I
 
 This function takes four arguments, which are the main plugin container, the name of a plugin, the path to the plugin and the symbol to look for in the compiled plugin. It hashes the name of the plugin and makes it fit into the main plugin container, then fills the data within the correct plugin information structure. On failure it throws an error and returns a non-zero integer, on success it returns 0.
 
-### getptr()
+### plug _ exec()
 
-This function takes two arguments, which are the main plugin container and the name of a plugin. It hashes the name of the plugin, and returns the function pointer the plugin. On failure it throws an error and returns NULL, and returns a function pointer on success. The returned function takes a void pointer as argument. It is up to you to ensure a plugins safe running.
+This function takes three arguments, which are the main plugin container, the name of a plugin and the argument which you want to pass to the plugin as a void pointer. It hashes the name of the plugin, and from this executes the correct one. On failure it throws an error and returns NULL, and the function pointer of the plugin on success. It is up to you to ensure a plugins safe running, plug _ exec does not do anything beyond calling it.
 
 ### uninstall()
 
