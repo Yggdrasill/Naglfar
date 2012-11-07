@@ -20,7 +20,7 @@ void start_thread(threadinfo *info)
 {
   if(!install(info->container, info->name, info->path, "init_func") ) {
     plug_exec(info->container, info->name, (void *)&info->string);
-//    uninstall(info->container, info->name);
+    uninstall(info->container, info->name);
   }
 }
 
