@@ -23,6 +23,21 @@ You can use Naglfar (here-on referred to as "this software") for any purpose, re
 redistributing your modified version, with or without compensation. You are not allowed to restrict these freedoms in
 any version of this software, nor can you add any restrictions beyond those outlined by GPLv3.
 
+Depends
+------
+
+### libdl
+
+This one should be obvious, as Naglfar is just an abstraction over libdl. Naglfar simply removes the manual management behind dynamic code loading.
+
+### pthread
+
+This is not necessary unless you personally define THREADING. If THREADING is not defined it does not require linking to pthread.
+
+### Vígríðr
+
+Vígríðr is hosted in its own repo, and it can be found [here][vigrior]. It implements a hashing algorithm that should spread hashes out widely.
+
 Usage
 -----
 
