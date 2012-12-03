@@ -155,7 +155,7 @@ static void list_destroy(plist **list)
 void plug_destruct(pcontainer *container)
 {
   if(!container)
-    return fputs(plugerr(PLUGERR_CNA, NULL), stderr);
+    fputs(plugerr(CNA, NULL), stderr);
 
   #ifdef THREADING
     pthread_mutex_destroy(&container->allocmutex);
@@ -165,9 +165,11 @@ void plug_destruct(pcontainer *container)
       if(container->list[container->max]->plugin[i]) {
         dlclose(container->list[container->max]->plugin[i]->handle);
         free(container->list[container->max]->plugin[i]);
-       }
-     }
-   }
+      }
+    }
+    list_destroy(&container->list[container->max]);
+    container->list[container->max] = NULL;
+  }
   free(container->list);
   container->list = NULL;
   free(container);
@@ -189,7 +191,7 @@ static int unload(void *handle)
 
 /* Unloads the plugin and frees the plugin information structure. Does not return anything */
 
-void uninstall(pcontainer *container, char *name)
+void plug_uninstall(pcontainer *container, char *name)
 {
   uint32_t hash = 0;
   hash = gen_hash(name, container->max);
@@ -283,7 +285,7 @@ static int prepare(pinfo **plugin, uint32_t hash, char *name, char *path, char *
 /* Installs a plugin and puts it in the correct container->plugin[hash]. Returns non-zero on failure and zero on
  * success. */
 
-int install(pcontainer *container, char *name, char *path, char *symbol)
+int plug_install(pcontainer *container, char *name, char *path, char *symbol)
 {
   uint32_t hash = gen_hash(name, container->max);
   int status = 0;
@@ -350,12 +352,12 @@ int install(pcontainer *container, char *name, char *path, char *symbol)
 
 /* Reinstalls the plugin. Use this if you need to reload a plugin. */
 
-int reinstall(pcontainer *container, char *name, char *path, char *symbol)
+int plug_reinstall(pcontainer *container, char *name, char *path, char *symbol)
 {
   int status = 0;
 
-  uninstall(container, name);
-  status = install(container, name, path, symbol);
+  plug_uninstall(container, name);
+  status = plug_install(container, name, path, symbol);
 
   return status;
 }
