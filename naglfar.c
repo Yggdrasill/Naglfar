@@ -154,29 +154,24 @@ static void list_destroy(plist **list)
 
 void plug_destruct(pcontainer *container)
 {
-  if(container) {
-    #ifdef THREADING
-      pthread_mutex_destroy(&container->allocmutex);
-    #endif
-    while(container->max--) {
-      if(container->list[container->max]) {
-        for(int i = 0; i < 2; i++) {
-          if(container->list[container->max]->plugin[i]) {
-            dlclose(container->list[container->max]->plugin[i]->handle);
-            free(container->list[container->max]->plugin[i]);
-          }
-        }
-      }
-      list_destroy(&container->list[container->max]);
-      container->list[container->max] = NULL;
-    }
-    free(container->list);
-    container->list = NULL;
-    free(container);
-    container = NULL;
-  }
-  else
-    fputs(plugerr(CNA, NULL), stderr);
+  if(!container)
+    return fputs(plugerr(PLUGERR_CNA, NULL), stderr);
+
+  #ifdef THREADING
+    pthread_mutex_destroy(&container->allocmutex);
+  #endif
+  while(container->max--) {
+    for(int i = 0; i < 2 && container->list[container->max]; i++) {
+      if(container->list[container->max]->plugin[i]) {
+        dlclose(container->list[container->max]->plugin[i]->handle);
+        free(container->list[container->max]->plugin[i]);
+       }
+     }
+   }
+  free(container->list);
+  container->list = NULL;
+  free(container);
+  container = NULL;
 }
 
 /* Unloads the plugin. You shouldn't call it, you should use uninstall(), which calls this function.
