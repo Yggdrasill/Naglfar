@@ -79,3 +79,4 @@ I wrote this plugin framework for my own enjoyment, and to make it easier for me
 [gpl3]: https://www.gnu.org/licenses/gpl.html
 [irc]: irc://irc.datnode.net/hacking
 [email]: mailto:yggdrasill@lavabit.com
+[vigrior]: https://github.com/Yggdrasill/Vigrior
