@@ -1,50 +1,52 @@
+#include "naglfar.h"
+
 static char *plugerr(int perror, char *details)
 {
   static char error_msg[1024];
 
   switch(perror)
   {
-    case PLUGERR_NONE:
+    case NONE:
       strncpy(error_msg, "Why are you even here? You shouldn't be\n", 1024);
       break;;
-    case PLUGERR_OPEN:
+    case OPEN:
       snprintf(error_msg, 1024, "Failed to open plugin file: %s\n", dlerror() );
       break;
-    case PLUGERR_LOAD:
+    case LOAD:
       snprintf(error_msg, 1024, "Failed to load plugin: %s\n", dlerror() );
       break;
-    case PLUGERR_UNLOAD:
+    case UNLOAD:
       snprintf(error_msg, 1024, "Failed to unload plugin: %s\n", dlerror() );
       break;
-    case PLUGERR_NUNLOAD:
+    case NUNLOAD:
       snprintf(error_msg, 1024, "You're trying to unload %s, but the plugin is not loaded\n", details);
       break;
-    case PLUGERR_NLOADED:
+    case NLOADED:
       strncpy(error_msg, "You're trying to return a function pointer for a plugin,"
                           " but it does not appear to be loaded\n", 1024);
       break;
-    case PLUGERR_LOADED:
+    case LOADED:
       snprintf(error_msg, 1024, "Plugin %s already loaded. reinstalling is done with reinstall()\n", details);
       break;
-    case PLUGERR_HASHCOL:
+    case HASHCOL:
       snprintf(error_msg, 1024, "Oops! Seems like there's been a hash collision. The colliding plugin names are: %s. "
                           "To fix this, rename your plugin\n", details);
       break;
-    case PLUGERR_FIXHASHCOL:
+    case FIXHASHCOL:
       snprintf(error_msg, 1024, "There has been a fixable hash collision. The colliding plugin names are: %s. "
                           "Fixing.\n", details);
       break;
-    case PLUGERR_UFIXHASHCOL:
+    case UFIXHASHCOL:
       snprintf(error_msg, 1024, "There has previously been a fixable hash collision. Now unloading %s, "
                           "which should be the correct plugin\n", details);
       break;
-    case PLUGERR_SMEM:
+    case SMEM:
       strncpy(error_msg, "Failed to allocate memory for plugin info. Not enough memory available\n", 1024);
       break;
-    case PLUGERR_CMEM:
+    case CMEM:
       strncpy(error_msg, "Failed to allocate memory for the main plugin container. Not enough memory available\n", 1024);
       break;
-    case PLUGERR_CNA:
+    case CNA:
       strncpy(error_msg, "You're trying to free the main plugin container, but it's not even malloced. Aborting\n", 1024);
       break;
     default:
@@ -62,7 +64,7 @@ static pinfo *plug_alloc(int *status)
   pinfo *plugin = malloc(sizeof(pinfo) );
 
   if(!plugin)
-    *status = PLUGERR_SMEM;
+    *status = SMEM;
 
   return plugin;
 }
@@ -76,7 +78,7 @@ static plist *list_alloc(int *status)
   plist *list = calloc(size, size);
 
   if(!list)
-    *status = PLUGERR_LMEM;
+    *status = LMEM;
   #ifdef THREADING
     else
       pthread_mutex_init(&list->listmutex, NULL);
@@ -98,7 +100,7 @@ pcontainer *plug_construct(uint32_t max)
   #endif
 
   if(!container) {
-    status = PLUGERR_CMEM;
+    status = CMEM;
     fputs(plugerr(status, NULL), stderr);
     return NULL;
   }
@@ -108,7 +110,7 @@ pcontainer *plug_construct(uint32_t max)
   container->list = calloc(sizeof(plist *), max);
 
   if(!container->list)  {
-    status = PLUGERR_SMEM;
+    status = SMEM;
     fputs(plugerr(status, NULL), stderr);
     plug_destruct(container);
     return NULL;
@@ -164,7 +166,7 @@ void plug_destruct(pcontainer *container)
     container = NULL;
   }
   else
-    fputs(plugerr(PLUGERR_CNA, NULL), stderr);
+    fputs(plugerr(CNA, NULL), stderr);
 }
 
 /* Unloads the plugin. You shouldn't call it, you should use uninstall(), which calls this function.
@@ -175,7 +177,7 @@ static int unload(void *handle)
   int status = dlclose(handle);
 
   if(status)
-    status = PLUGERR_UNLOAD;
+    status = UNLOAD;
 
   return status;
 }
@@ -201,21 +203,21 @@ void uninstall(pcontainer *container, char *name)
         break;
       }
       else if(status && container->list[hash]->hash_col)
-        status = PLUGERR_UFIXHASHCOL;
+        status = UFIXHASHCOL;
     }
     else if(i)
-      status = PLUGERR_NUNLOAD;
+      status = NUNLOAD;
   }
 
   switch(status) {
-    case PLUGERR_NONE:
+    case NONE:
       status = unload(container->list[hash]->plugin[plugin_num]->handle);
       break;
-    case PLUGERR_UFIXHASHCOL:
+    case UFIXHASHCOL:
       fputs(plugerr(status, container->list[hash]->plugin[plugin_num]->name), stderr);
       status = unload(container->list[hash]->plugin[plugin_num]->handle);
       break;
-    case PLUGERR_NUNLOAD:
+    case NUNLOAD:
       fputs(plugerr(status, name), stderr);
       break;
     default:
@@ -239,12 +241,12 @@ static int load(pinfo *plugin, char *path, char *symbol)
   plugin->handle = dlopen(path, RTLD_NOW);
 
   if(!plugin->handle)
-    return status = PLUGERR_OPEN;
+    return status = OPEN;
 
   plugin->function_ptr = (func_ptr)dlsym(plugin->handle, symbol);
 
   if(!plugin->function_ptr)
-    status = PLUGERR_LOAD;
+    status = LOAD;
 
   return status;
 }
@@ -301,13 +303,13 @@ int install(pcontainer *container, char *name, char *path, char *symbol)
   if(!hasalloced && container->list[hash]->plugin[plugin_num]) {
     status = check_hash(container->list[hash]->plugin[plugin_num]->name, name, container->max);
     if(status && container->list[hash]->hash_col)
-      status = PLUGERR_HASHCOL;
+      status = HASHCOL;
     else if(status && !container->list[hash]->hash_col) {
-      status = PLUGERR_FIXHASHCOL;
+      status = FIXHASHCOL;
       plugin_num = 1;
     }
     else if(!status)
-      status = PLUGERR_LOADED;
+      status = LOADED;
   }
 
   switch(status) {
@@ -316,18 +318,18 @@ int install(pcontainer *container, char *name, char *path, char *symbol)
       container->list[hash]->hash_col = 0;
       container->count++;
       break;
-    case PLUGERR_FIXHASHCOL:
+    case FIXHASHCOL:
       status = prepare(&container->list[hash]->plugin[plugin_num], hash, name, path, symbol);
       snprintf(names, 256, "%s %s", container->list[hash]->plugin[!plugin_num]->name, name);
-      fputs(plugerr(PLUGERR_FIXHASHCOL, names), stderr);
+      fputs(plugerr(FIXHASHCOL, names), stderr);
       container->list[hash]->hash_col = 1;
       container->count++;
       break;
-    case PLUGERR_HASHCOL:
+    case HASHCOL:
       snprintf(names, 256, "%s %s", container->list[hash]->plugin[plugin_num]->name, name);
       fputs(plugerr(status, names), stderr);
       break;
-    case PLUGERR_LOADED:
+    case LOADED:
       fputs(plugerr(status, name), stderr);
       break;
     default:
@@ -374,7 +376,7 @@ void* plug_exec(pcontainer *container, char *name, void *data)
     if(status) plugin_num = 1;
   }
   if(!container->list[hash]->plugin[plugin_num]) {
-    fputs(plugerr(PLUGERR_NLOADED, NULL), stderr);
+    fputs(plugerr(NLOADED, NULL), stderr);
     return NULL;
   }
 

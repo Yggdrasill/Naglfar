@@ -60,21 +60,21 @@ typedef struct {
 } pcontainer;
 
 enum plugErrCodes {
-  PLUGERR_NONE = 0,
-  PLUGERR_OPEN,
-  PLUGERR_LOAD,
-  PLUGERR_UNLOAD,
-  PLUGERR_NUNLOAD,
-  PLUGERR_NLOADED,
-  PLUGERR_LOADED,
-  PLUGERR_HASHCOL,
-  PLUGERR_FIXHASHCOL,
-  PLUGERR_UFIXHASHCOL,
-  PLUGERR_SMEM,
-  PLUGERR_LMEM,
-  PLUGERR_CMEM,
-  PLUGERR_CNA
-} p_error_codes;
+  NONE = 0,
+  OPEN,
+  LOAD,
+  UNLOAD,
+  NUNLOAD,
+  NLOADED,
+  LOADED,
+  HASHCOL,
+  FIXHASHCOL,
+  UFIXHASHCOL,
+  SMEM,
+  LMEM,
+  CMEM,
+  CNA
+} PLUGERR;
 
 static char *plugerr(int, char *);
 static pinfo *plug_alloc(int *);
@@ -92,5 +92,3 @@ void uninstall(pcontainer *, char *);
 int install(pcontainer *, char *, char *, char *);
 int reinstall(pcontainer *, char *, char *, char *);
 void* plug_exec(pcontainer *, char *, void *);
-
-#include "naglfar.c"
