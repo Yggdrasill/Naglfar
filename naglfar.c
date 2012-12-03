@@ -1,5 +1,15 @@
 #include "naglfar.h"
 
+static char *plugerr(int, char *);
+static pinfo *plug_alloc(int *);
+static plist *list_alloc(int *);
+static void plug_destroy(pinfo **);
+static void list_destroy(plist **);
+static int unload(void *);
+static int load(pinfo *, char *, char *);
+static int prepare(pinfo **, uint32_t, char *, char *, char *);
+static func_ptr getptr(pcontainer *, char *, int, int);
+
 static char *plugerr(int perror, char *details)
 {
   static char error_msg[1024];

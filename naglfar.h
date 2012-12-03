@@ -76,19 +76,9 @@ enum plugErrCodes {
   CNA
 } PLUGERR;
 
-static char *plugerr(int, char *);
-static pinfo *plug_alloc(int *);
-static plist *list_alloc(int *);
-static void plug_destroy(pinfo **);
-static void list_destroy(plist **);
-static int unload(void *);
-static int load(pinfo *, char *, char *);
-static int prepare(pinfo **, uint32_t, char *, char *, char *);
-static func_ptr getptr(pcontainer *, char *, int, int);
-
 pcontainer *plug_construct(uint32_t);
 void plug_destruct(pcontainer *);
-void uninstall(pcontainer *, char *);
-int install(pcontainer *, char *, char *, char *);
-int reinstall(pcontainer *, char *, char *, char *);
+void plug_uninstall(pcontainer *, char *);
+int plug_install(pcontainer *, char *, char *, char *);
+int plug_reinstall(pcontainer *, char *, char *, char *);
 void* plug_exec(pcontainer *, char *, void *);

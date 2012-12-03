@@ -18,9 +18,9 @@ typedef struct {
 
 void start_thread(threadinfo *info)
 {
-  if(!install(info->container, info->name, info->path, "init_func") ) {
+  if(!plug_install(info->container, info->name, info->path, "init_func") ) {
     plug_exec(info->container, info->name, (void *)&info->string);
-    uninstall(info->container, info->name);
+    plug_uninstall(info->container, info->name);
   }
 }
 

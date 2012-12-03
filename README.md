@@ -49,7 +49,7 @@ As previously stated in this README, Naglfar is intended to abstract away some f
 
 This function takes an unsigned long as its input (maximum amount of plugins). It allocates memory to a main plugin container that holds the amount of plugins loaded, the max amount of plugins and an array of datastructures that contain the plugins themselves, and various information related to it. On failure it throws an error and returns NULL, and returns the main plugin container on success.
 
-### install()
+### plug _ install()
 
 This function takes four arguments, which are the main plugin container, the name of a plugin, the path to the plugin and the symbol to look for in the compiled plugin. It hashes the name of the plugin and makes it fit into the main plugin container, then fills the data within the correct plugin information structure. On failure it throws an error and returns a non-zero integer, on success it returns 0.
 
@@ -57,11 +57,11 @@ This function takes four arguments, which are the main plugin container, the nam
 
 This function takes three arguments, which are the main plugin container, the name of a plugin and the argument which you want to pass to the plugin as a void pointer. It hashes the name of the plugin, and from this executes the correct one. On failure it throws an error and returns NULL, and the function pointer of the plugin on success. It is up to you to ensure a plugins safe running, plug _ exec does not do anything beyond calling it.
 
-### uninstall()
+### plug _ uninstall()
 
 This function takes two arguments, which are the main plugin container and the name of a plugin. It hashes the name of the plugin, and throws an error on failure. It does not return anything.
 
-### reinstall()
+### plug _ reinstall()
 
 This function takes four arguments, which are the main plugin container, the name of the plugin, the path to the plugin and the symbol to look for. Internally it calls uninstall() and then calls install(). It return non-zero on failure and 0 on success.
 
