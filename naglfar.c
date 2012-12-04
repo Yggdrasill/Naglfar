@@ -122,8 +122,8 @@ pcontainer *plug_construct(uint32_t max)
   if(!container->list)  {
     status = SMEM;
     fputs(plugerr(status, NULL), stderr);
-    plug_destruct(container);
-    return NULL;
+    plug_destruct(&container);
+    container = NULL;
   }
 
   return container;
@@ -152,28 +152,29 @@ static void list_destroy(plist **list)
 
 /* Destroys the main plugin container. You should uninstall() all plugins before calling this. */
 
-void plug_destruct(pcontainer *container)
+void plug_destruct(pcontainer **container)
 {
-  if(!container)
+  pcontainer *cont_ptr = *container;
+  if(!cont_ptr)
     fputs(plugerr(CNA, NULL), stderr);
 
   #ifdef THREADING
     pthread_mutex_destroy(&container->allocmutex);
   #endif
-  while(container->max--) {
-    for(int i = 0; i < 2 && container->list[container->max]; i++) {
-      if(container->list[container->max]->plugin[i]) {
-        dlclose(container->list[container->max]->plugin[i]->handle);
-        free(container->list[container->max]->plugin[i]);
+  while(cont_ptr->max--) {
+    for(int i = 0; i < 2 && cont_ptr->list[cont_ptr->max]; i++) {
+      if(cont_ptr->list[cont_ptr->max]->plugin[i]) {
+        dlclose(cont_ptr->list[cont_ptr->max]->plugin[i]->handle);
+        free(cont_ptr->list[cont_ptr->max]->plugin[i]);
       }
     }
-    list_destroy(&container->list[container->max]);
-    container->list[container->max] = NULL;
+    list_destroy(&cont_ptr->list[cont_ptr->max]);
+    cont_ptr->list[cont_ptr->max] = NULL;
   }
-  free(container->list);
-  container->list = NULL;
-  free(container);
-  container = NULL;
+  free(cont_ptr->list);
+  cont_ptr->list = NULL;
+  free(cont_ptr);
+  cont_ptr = NULL;
 }
 
 /* Unloads the plugin. You shouldn't call it, you should use uninstall(), which calls this function.

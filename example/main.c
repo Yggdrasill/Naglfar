@@ -42,6 +42,6 @@ int main(void)
   }
   pthread_join(threads[0], NULL);
   pthread_join(threads[1], NULL);
-  plug_destruct(container);
+  plug_destruct(&container);
   return 0;
 }

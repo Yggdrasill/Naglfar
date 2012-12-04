@@ -51,23 +51,23 @@ This function takes an unsigned long as its input (maximum amount of plugins). I
 
 ### plug _ install()
 
-This function takes four arguments, which are the main plugin container, the name of a plugin, the path to the plugin and the symbol to look for in the compiled plugin. It hashes the name of the plugin and makes it fit into the main plugin container, then fills the data within the correct plugin information structure. On failure it throws an error and returns a non-zero integer, on success it returns 0.
+This function takes four arguments, which is a pointer to the main plugin container, the name of a plugin, the path to the plugin and the symbol to look for in the compiled plugin. It hashes the name of the plugin and makes it fit into the main plugin container, then fills the data within the correct plugin information structure. On failure it throws an error and returns a non-zero integer, on success it returns 0.
 
 ### plug _ exec()
 
-This function takes three arguments, which are the main plugin container, the name of a plugin and the argument which you want to pass to the plugin as a void pointer. It hashes the name of the plugin, and from this executes the correct one. On failure it throws an error and returns NULL, and the function pointer of the plugin on success. It is up to you to ensure a plugins safe running, plug _ exec does not do anything beyond calling it.
+This function takes three arguments, which is a pointer to the main plugin container, the name of a plugin and the argument which you want to pass to the plugin as a void pointer. It hashes the name of the plugin, and from this executes the correct one. On failure it throws an error and returns NULL, and the function pointer of the plugin on success. It is up to you to ensure a plugins safe running, plug _ exec does not do anything beyond calling it.
 
 ### plug _ uninstall()
 
-This function takes two arguments, which are the main plugin container and the name of a plugin. It hashes the name of the plugin, and throws an error on failure. It does not return anything.
+This function takes two arguments, which is a pointer to the main plugin container and the name of a plugin. It hashes the name of the plugin, and throws an error on failure. It does not return anything.
 
 ### plug _ reinstall()
 
-This function takes four arguments, which are the main plugin container, the name of the plugin, the path to the plugin and the symbol to look for. Internally it calls uninstall() and then calls install(). It return non-zero on failure and 0 on success.
+This function takes four arguments, which is a pointer to the main plugin container, the name of the plugin, the path to the plugin and the symbol to look for. Internally it calls uninstall() and then calls install(). It return non-zero on failure and 0 on success.
 
 ### plug _ destruct()
 
-This function takes the main plugin container as its argument, and frees the main plugin container. If the main plugin container is not malloced, it will throw an error. It does not return anything.
+This function takes a double pointer to the main plugin container as its argument, and frees the main plugin container. If the main plugin container is not malloced, it will throw an error. It does not return anything.
 
 NOTE: This function _IS NOT_ thread-safe, it WILL destroy all your plugins.
 

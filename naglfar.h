@@ -77,7 +77,7 @@ enum plugErrCodes {
 } PLUGERR;
 
 pcontainer *plug_construct(uint32_t);
-void plug_destruct(pcontainer *);
+void plug_destruct(pcontainer **);
 void plug_uninstall(pcontainer *, char *);
 int plug_install(pcontainer *, char *, char *, char *);
 int plug_reinstall(pcontainer *, char *, char *, char *);
