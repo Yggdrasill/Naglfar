@@ -76,9 +76,9 @@ enum plugErrCodes {
   CNA
 } PLUGERR;
 
-pcontainer *plug_construct(uint32_t);
+pcontainer *plug_construct(const uint32_t);
 void plug_destruct(pcontainer **);
-void plug_uninstall(pcontainer *, char *);
-int plug_install(pcontainer *, char *, char *, char *);
-int plug_reinstall(pcontainer *, char *, char *, char *);
-void* plug_exec(pcontainer *, char *, void *);
+void plug_uninstall(pcontainer *, const char *);
+int plug_install(pcontainer *, const char *, const char *, const char *);
+int plug_reinstall(pcontainer *, const char *, const char *, const char *);
+void* plug_exec(pcontainer *, const char *, void *);

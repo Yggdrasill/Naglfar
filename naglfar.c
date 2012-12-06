@@ -1,16 +1,16 @@
 #include "naglfar.h"
 
-static char *plugerr(int, char *);
+static char *plugerr(const int, const char *);
 static pinfo *plug_alloc(int *);
 static plist *list_alloc(int *);
 static void plug_destroy(pinfo **);
 static void list_destroy(plist **);
 static int unload(void *);
-static int load(pinfo *, char *, char *);
-static int prepare(pinfo **, uint32_t, char *, char *, char *);
-static func_ptr getptr(pcontainer *, char *, int, int);
+static int load(pinfo *, const char *, const char *);
+static int prepare(pinfo **, const uint32_t, const char *, const char *, const char *);
+static func_ptr getptr(pcontainer *, const char *, const int, const int);
 
-static char *plugerr(int perror, char *details)
+static char *plugerr(const int perror, const char *details)
 {
   static char error_msg[1024];
 
@@ -99,7 +99,7 @@ static plist *list_alloc(int *status)
 /* Constructs the main plugin container, and initializes all container->plugin to NULL.
  * It should be called before trying to run ANY other functions. Returns NULL on failure and a pcontainer on success. */
 
-pcontainer *plug_construct(uint32_t max)
+pcontainer *plug_construct(const uint32_t max)
 {
   pcontainer *container;
   int status = 0;
@@ -192,7 +192,7 @@ static int unload(void *handle)
 
 /* Unloads the plugin and frees the plugin information structure. Does not return anything */
 
-void plug_uninstall(pcontainer *container, char *name)
+void plug_uninstall(pcontainer *container, const char *name)
 {
   uint32_t hash = 0;
   hash = gen_hash(name, container->max);
@@ -243,7 +243,7 @@ void plug_uninstall(pcontainer *container, char *name)
 /* Loads a plugin. You shouldn't call this, you should use install(), which calls this function. Returns non-zero on
  * failure and zero on success. */
 
-static int load(pinfo *plugin, char *path, char *symbol)
+static int load(pinfo *plugin, const char *path, const char *symbol)
 {
   int status = 0;
   plugin->handle = dlopen(path, RTLD_NOW);
@@ -262,7 +262,7 @@ static int load(pinfo *plugin, char *path, char *symbol)
 /* Prepares memory for plugin loading and loads it. Install() calls this function. Returns non-zero on failure and zero
  * on success */
 
-static int prepare(pinfo **plugin, uint32_t hash, char *name, char *path, char *symbol)
+static int prepare(pinfo **plugin, const uint32_t hash, const char *name, const char *path, const char *symbol)
 {
   int status = 0;
   *plugin = plug_alloc(&status);
@@ -286,7 +286,7 @@ static int prepare(pinfo **plugin, uint32_t hash, char *name, char *path, char *
 /* Installs a plugin and puts it in the correct container->plugin[hash]. Returns non-zero on failure and zero on
  * success. */
 
-int plug_install(pcontainer *container, char *name, char *path, char *symbol)
+int plug_install(pcontainer *container, const char *name, const char *path, const char *symbol)
 {
   uint32_t hash = gen_hash(name, container->max);
   int status = 0;
@@ -353,7 +353,7 @@ int plug_install(pcontainer *container, char *name, char *path, char *symbol)
 
 /* Reinstalls the plugin. Use this if you need to reload a plugin. */
 
-int plug_reinstall(pcontainer *container, char *name, char *path, char *symbol)
+int plug_reinstall(pcontainer *container, const char *name, const char *path, const char *symbol)
 {
   int status = 0;
 
@@ -366,12 +366,12 @@ int plug_reinstall(pcontainer *container, char *name, char *path, char *symbol)
 /* Gets the function pointer from the plugin you're requesting with name. Returns NULL on failure and a function
  * pointer on success. */
 
-static func_ptr getptr(pcontainer *container, char *name, int hash, int plugin_num)
+static func_ptr getptr(pcontainer *container, const char *name, const int hash, const int plugin_num)
 {
   return container->list[hash]->plugin[plugin_num]->function_ptr;
 }
 
-void* plug_exec(pcontainer *container, char *name, void *data)
+void* plug_exec(pcontainer *container, const char *name, void *data)
 {
   uint32_t hash = gen_hash(name, container->max);
   int status = 0;
