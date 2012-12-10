@@ -162,7 +162,7 @@ void plug_destruct(pcontainer **container)
     pthread_mutex_destroy(&container->allocmutex);
   #endif
   while(cont_ptr->max--) {
-    for(int i = 0; i < 2 && cont_ptr->list[cont_ptr->max]; i++) {
+    for(int i = 0; i < PLUGINS && cont_ptr->list[cont_ptr->max]; i++) {
       if(cont_ptr->list[cont_ptr->max]->plugin[i]) {
         dlclose(cont_ptr->list[cont_ptr->max]->plugin[i]->handle);
         free(cont_ptr->list[cont_ptr->max]->plugin[i]);
@@ -203,7 +203,7 @@ void plug_uninstall(pcontainer *container, const char *name)
     pthread_mutex_lock(&container->list[hash]->listmutex);
   #endif
 
-  for(int i = 0; i < 2; i++) {
+  for(int i = 0; i < PLUGINS; i++) {
     if(container->list[hash]->plugin[i]) {
       status =  check_hash(container->list[hash]->plugin[i]->name, name, container->max);
       if(!status) {
@@ -393,3 +393,4 @@ void* plug_exec(pcontainer *container, const char *name, void *data)
 
   return fptr;
 }
+

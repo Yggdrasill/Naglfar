@@ -30,6 +30,15 @@
   #include <pthread.h>
 #endif
 
+#define PLUGINS 2
+
+/*
+ * Do NOT change the above value, this has been locked to 2 because of fundamental design goals and it will break plugin
+ * selection behavior. Although the selection behavior is easy to change, it will not be done in my version of Naglfar
+ * for the aforementioned reasons. You are free to fork, as the license implies.
+ *
+ */
+
 typedef void(*func_ptr)(void *);
 
 typedef struct {
@@ -59,7 +68,7 @@ typedef struct {
   #endif
 } pcontainer;
 
-enum plugErrCodes {
+enum ERRCODES {
   NONE = 0,
   OPEN,
   LOAD,
@@ -82,3 +91,4 @@ void plug_uninstall(pcontainer *, const char *);
 int plug_install(pcontainer *, const char *, const char *, const char *);
 int plug_reinstall(pcontainer *, const char *, const char *, const char *);
 void* plug_exec(pcontainer *, const char *, void *);
+
