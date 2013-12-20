@@ -161,7 +161,7 @@ void plug_destruct(pcontainer **container)
   #ifdef THREADING
     pthread_mutex_destroy(&container->allocmutex);
   #endif
-  while(cont_ptr->max--) {
+  for(; cont_ptr->max; cont_ptr->max--) {
     for(int i = 0; i < PLUGINS && cont_ptr->list[cont_ptr->max]; i++) {
       if(cont_ptr->list[cont_ptr->max]->plugin[i]) {
         dlclose(cont_ptr->list[cont_ptr->max]->plugin[i]->handle);
